@@ -16,7 +16,7 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
 
   # Transformando a coluna das categorias em lista
   nomes_violencias <- list |>
-    dplyr::filter(categoria!='Total') |>
+    stats::filter(categoria!='Total') |>
     dplyr::select(categoria) |>
     dplyr::pull()
 
@@ -62,8 +62,8 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
 
   # Seleção das categorias
   l<-list |>
-    dplyr::filter(categoria!='Total') |>
-    dplyr::filter(categoria)
+    stats::filter(categoria!='Total') |>
+    stats::filter(categoria)
 
   # Linha de quem não tem registros
   b_pivotado<-
