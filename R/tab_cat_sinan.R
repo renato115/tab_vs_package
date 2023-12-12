@@ -12,23 +12,23 @@
 tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
 
   # tibble vazia
-  tab_tipo_viol <- tibble()
+  tab_tipo_viol <- dplyr::tibble()
 
   # Transformando a coluna das categorias em lista
   nomes_violencias <- list |>
-    filter(categoria!='Total') |>
-    select(categoria) |>
-    pull()
+    dplyr::filter(categoria!='Total') |>
+    dplyr::select(categoria) |>
+    dplyr::pull()
 
   # Criando coluna de 1
   df$n_ob <- 1
 
   for (i in 1:length(nomes_violencias)){
     nm <- nomes_violencias[i]
-    f <- as.formula(paste0(nomes_violencias[i], " ~ ", col))
+    f <- stats::as.formula(paste0(nomes_violencias[i], " ~ ", col))
     tab_enforq <- reshape2::dcast(
       df |>
-        filter(banco == 'SINAN'),
+        dplyr::filter(banco == 'SINAN'),
       f,
       value.var='n_ob',
       sum
@@ -43,8 +43,8 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
     col_name <- paste0('tipo_', deparse(substitute(list)))
 
     tab_enforq <- tab_enforq |>
-      filter(get(col_name) == 1)  |>
-      mutate({{col_name}} := nomes_violencias[i])
+      dplyr::filter(get(col_name) == 1)  |>
+      dplyr::mutate({{col_name}} := nomes_violencias[i])
 
     #Juntando os títulos com os dados
     tab_tipo_viol <- rbind(tab_tipo_viol,tab_enforq)
@@ -58,31 +58,31 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
   # Substituindo os valores em tab_tipo_viol
   tab_tipo_viol[[col_name]] <- mapeamento[[colnames(list)[2]]][match(tab_tipo_viol[[col_name]], mapeamento$categoria)]
 
-  tab_tipo_viol <- tab_tipo_viol |> arrange(-Total)
+  tab_tipo_viol <- tab_tipo_viol |> dplyr::arrange(-Total)
 
   # Seleção das categorias
   l<-list |>
-    filter(categoria!='Total') |>
-    filter(categoria)
+    dplyr::filter(categoria!='Total') |>
+    dplyr::filter(categoria)
 
   # Linha de quem não tem registros
   b_pivotado<-
     df  |>
-    filter(banco == 'SINAN')  |>
-    mutate_all(~ ifelse(is.na(.), 0, .))  |>
-    filter_at(
-      vars(l$categoria),
-      all_vars(. != 1)
+    dplyr::filter(banco == 'SINAN')  |>
+    dplyr::mutate_all(~ ifelse(is.na(.), 0, .))  |>
+    dplyr::filter_at(
+      dplyr::vars(l$categoria),
+      dplyr::all_vars(. != 1)
     )  |>
-    group_by(get(col)) |>
-    summarise(n = n()) |>
+    dplyr::group_by(get(col)) |>
+    dplyr::summarise(n = n()) |>
     janitor::adorn_totals('row') |>
     tidyr::pivot_wider(
       names_from = `get(col)`,
       values_from = n,
       values_fill = 0
     ) |>
-    mutate({{col_name}} := case_when(
+    dplyr::mutate({{col_name}} := dplyr::case_when(
       col_name == 'tipo_viol' ~ 'Nenhuma violência registrada',
       col_name == 'tipo_enc' ~ 'Nenhum encaminhamento',
       col_name == 'tipo_proc' ~ 'Nenhum procedimento',
@@ -91,28 +91,28 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
     )) |>
     base::as.data.frame()
 
-  tab_tipo_viol <- bind_rows(tab_tipo_viol, b_pivotado)
+  tab_tipo_viol <- dplyr::bind_rows(tab_tipo_viol, b_pivotado)
 
 
 
   #### Linha de registros ####
   regis <- df |>
-    filter(banco == 'SINAN') |>
-    group_by(base::get(col)) |>
-    summarise(n = n()) |>
+    dplyr::filter(banco == 'SINAN') |>
+    dplyr::group_by(base::get(col)) |>
+    dplyr::summarise(n = n()) |>
     janitor::adorn_totals('row') |>
     tidyr::pivot_wider(
       names_from = `get(col)`,
       values_from = n,
       values_fill = 0
     ) |>
-    mutate(
+    dplyr::mutate(
       {{col_name}} := "Número total de registros"
     ) |>
     base::as.data.frame()
 
 
-  tab_tipo_viol<-bind_rows(tab_tipo_viol, regis)
+  tab_tipo_viol<-dplyr::bind_rows(tab_tipo_viol, regis)
   tab_tipo_viol[is.na(tab_tipo_viol)] <- 0
 
 
@@ -121,12 +121,12 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
     tab_tipo_viol_a <- tab_tipo_viol |> base::as.data.frame()
     # Supondo que '{{col_name}}' seja uma coluna no seu dataframe
     numerador <- tab_tipo_viol_a |>
-      filter(get(col_name) != 'Número total de registros') |>
-      filter(-{{col_name}})
+      dplyr::filter(get(col_name) != 'Número total de registros') |>
+      dplyr::filter(-{{col_name}})
 
     denominador <- tab_tipo_viol_a |>
-      filter(get(col_name) == 'Número total de registros') |>
-      filter(-{{col_name}})
+      dplyr::filter(get(col_name) == 'Número total de registros') |>
+      dplyr::filter(-{{col_name}})
 
     # Replicando a linha do denominador para ter o mesmo número de linhas que o numerador
     denominador_replicado <- suppressWarnings(
@@ -144,8 +144,8 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
     # Adicionando a coluna '{{col_name}}' de volta ao resultado
     result <- cbind(
       tab_tipo_viol_a |>
-        filter(get(col_name) != 'Número total de registros') |>
-        filter({{col_name}}),
+        dplyr::filter(get(col_name) != 'Número total de registros') |>
+        dplyr::filter({{col_name}}),
       result)
 
     # Convertendo o resultado para um dataframe
@@ -156,21 +156,21 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
   if (pct_mul) {
 
     mulheres <- df |>
-      filter(banco == 'SINAN') |>
-      distinct(
+      dplyr::filter(banco == 'SINAN') |>
+      dplyr::distinct(
         par_f,
         ds_raca,
         faixa_etaria_padrao
       ) |>
-      group_by(get(col)) |>
-      summarise(n = n()) |>
+      dplyr::group_by(get(col)) |>
+      dplyr::summarise(n = n()) |>
       janitor::adorn_totals('row') |>
       tidyr::pivot_wider(
         names_from = `get(col)`,
         values_from = n,
         values_fill = 0
       ) |>
-      mutate(
+      dplyr::mutate(
         {{col_name}} := "Número de mulheres"
       ) |>
       base::as.data.frame()
@@ -178,19 +178,19 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
 
     tab_tipo_viol<- tab_tipo_viol |> base::as.data.frame()
     numerador <- tab_tipo_viol  |>
-      filter(get(col_name) != 'Número total de registros')
+      dplyr::filter(get(col_name) != 'Número total de registros')
 
-    tab_tipo_viol<-bind_rows(tab_tipo_viol, mulheres)
+    tab_tipo_viol<-dplyr::bind_rows(tab_tipo_viol, mulheres)
 
     tab_tipo_viol_a <- tab_tipo_viol |> base::as.data.frame()
     # Supondo que '{{col_name}}' seja uma coluna no seu dataframe
     numerador <- tab_tipo_viol_a |>
-      filter(get(col_name) != 'Número de mulheres') |>
-      filter(-{{col_name}})
+      dplyr::filter(get(col_name) != 'Número de mulheres') |>
+      dplyr::filter(-{{col_name}})
 
     denominador <- tab_tipo_viol_a |>
-      filter(get(col_name) == 'Número de mulheres') |>
-      filter(-{{col_name}})
+      dplyr::filter(get(col_name) == 'Número de mulheres') |>
+      dplyr::filter(-{{col_name}})
 
     # Replicando a linha do denominador para ter o mesmo número de linhas que o numerador
     denominador_replicado <- suppressWarnings(
@@ -208,15 +208,15 @@ tab_cat_sinan<- function(df,list, col, pct_reg = FALSE, pct_mul = FALSE){
     # Adicionando a coluna '{{col_name}}' de volta ao resultado
     result <- cbind(
       tab_tipo_viol_a |>
-        filter(get(col_name) != 'Número de mulheres') |>
-        select({{col_name}}),
+        dplyr::filter(get(col_name) != 'Número de mulheres') |>
+        dplyr::select({{col_name}}),
       result)
 
     # Convertendo o resultado para um dataframe
     tab_tipo_viol <- base::as.data.frame(result)
 
     tab_tipo_viol <- tab_tipo_viol |>
-      filter(get(col_name) != 'Número total de registros')
+      dplyr::filter(get(col_name) != 'Número total de registros')
   }
 
   return(tab_tipo_viol)
